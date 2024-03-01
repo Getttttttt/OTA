@@ -6,11 +6,10 @@ gc.collect()
 
 class Senko:
     #https://gitcode.net/jd3096/micropython-ota-test.git
-    raw = "https://raw.githubusercontent.com"
-    github = "https://github.com"
+    raw = "https://gitcode.net"
     #github = "https://gitcode.net"
 
-    def __init__(self, user, repo, url=None, branch="main", working_dir="app", files=["boot.py", "main.py"], headers={}):
+    def __init__(self, user, repo, url=None, branch="-/raw/master", working_dir="app", files=["boot.py", "main.py"], headers={}):
         """Senko OTA agent class.
 
         Args:
@@ -53,7 +52,7 @@ class Senko:
 
     def _check_all(self):
         changes = []
-
+        print(len(self.files))
         for file in self.files:
             latest_version = self._get_file(self.url + "/" + file)
             if latest_version is None:
@@ -64,10 +63,13 @@ class Senko:
                     local_version = local_file.read()
             except:
                 local_version = ""
-
+            print("latest version:")
+            print(latest_version)
+            print("local_version:")
+            print(local_version)
             if not self._check_hash(latest_version, local_version):
                 changes.append(file)
-
+        print(changes)
         return changes
 
     def fetch(self):
@@ -87,12 +89,17 @@ class Senko:
         Returns:
             True - if changes were made, False - if not.
         """
+        
         changes = self._check_all()
-
+        print(changes)
+        #num=0
         for file in changes:
+            #num+=1
+            #print("修改中)
             with open(file, "w") as local_file:
                 local_file.write(self._get_file(self.url + "/" + file))
-
+                #print("修改成功！)
+        #print(num)
         if changes:
             return True
         else:

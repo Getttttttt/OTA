@@ -32,7 +32,7 @@ def main():
     #upip.install("micropython-senko")
 
     import senko
-    OTA = senko.Senko(user="cicada1212", repo="OTA_Test", working_dir="app", files=["main.py"])
+    OTA = senko.Senko(user="qq_63524001", repo="micropython-ota-test", working_dir="app", files=["main.py"])
     
     print('ota init')
 
