@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ESP32 Remote Upload</title>
+</head>
+<body>
+    <input type="file" id="fileInput" />
+    <button onclick="uploadFile()">Upload and Burn</button>
+    <input type="text" id="messageInput" />
+    <button onclick="sendMessage()">Send Message</button>
+
+    <script>
+        function uploadFile() {
+            var file = document.getElementById('fileInput').files[0];
+            var formData = new FormData();
+            formData.append("file", file);
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData,
+            }).then(response => {
+                if (response.ok) {
+                    console.log('File uploaded and burning started.');
+                }
+            });
+        }
+
+        function sendMessage() {
+            var message = document.getElementById('messageInput').value;
+            fetch('/send-message', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({message: message}),
+            }).then(response => {
+                if (response.ok) {
+                    console.log('Message sent.');
+                }
+            });
+        }
+    </script>
+</body>
+</html>
