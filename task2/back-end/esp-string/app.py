@@ -1,38 +1,38 @@
-import socket
+from flask import Flask, request, jsonify
+from flask_cors import CORS  # 处理同源策略
 import os
+import socket  # 用于与ESP32通信
 
-# 创建一个socket对象
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.bind(('', 80))  # 绑定到80端口
-s.listen(5)  # 开始监听
+app = Flask(__name__)
+CORS(app)  # 允许所有域的跨域请求，这里其实最后调整一下，只允许前端的请求会更好
 
-print("Waiting for connections...")
+ESP32_HOST = 'ESP32的IP地址' #记得修改为esp32的IP哈~
+ESP32_PORT = 12345  # 记得修改为ESP32监听的端口
 
-while True:
-    conn, addr = s.accept()  # 接受一个新连接
-    print('Got a connection from %s' % str(addr))
-    request = conn.recv(1024)  # 接收请求数据
-    request_str = str(request, 'utf-8')
+@app.route('/api/upload', methods=['POST'])
+def upload_file():
+    data = request.get_json()
+    file_path = data['filePath']
     
-    # 简单地查找特定标志来判断是否为文件上传
-    if "POST /upload" in request_str:
-        # 提取文件内容，这里需要根据实际的请求格式进行适当调整
-        start = request_str.find('\r\n\r\n') + 4
-        end = request_str.rfind('\r\n------')  # 假设使用multipart/form-data格式
-        file_content = request[start:end]
-        
-        # 写入文件，这里假设文件名是固定的
-        with open('script.py', 'w') as file:
-            file.write(file_content)
-        
-        # 发送响应
-        conn.send('HTTP/1.1 200 OK\n')
-        conn.send('Content-Type: text/html\n')
-        conn.send('Connection: close\n\n')
-        conn.sendall('File uploaded successfully.')
-        print("File uploaded successfully.")
-        
-        # 执行上传的脚本
-        exec(open('script.py').read(), globals())
-    
-    conn.close()
+    if not os.path.exists(file_path):
+        return jsonify({'message': 'File does not exist.'}), 404
+
+    try:
+        with open(file_path, 'r') as file:
+            file_content = file.read()
+            send_to_esp32(file_content, file_path)
+        return jsonify({'message': 'File is being transmitted to ESP32.'})
+    except Exception as e:
+        return jsonify({'message': f'An error occurred: {str(e)}'}), 500
+
+def send_to_esp32(file_content, file_path):
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.connect((ESP32_HOST, ESP32_PORT))
+            # 发送文件名和内容
+            s.sendall(f'{file_path}\n{file_content}'.encode())
+    except Exception as e:
+        print(f'Failed to send file to ESP32: {e}')
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0')
