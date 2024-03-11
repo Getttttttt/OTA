@@ -4,29 +4,49 @@ import os
 import socket  # 用于与ESP32通信
 
 app = Flask(__name__)
+app.config['upimgs'] = './'
 CORS(app)  # 允许所有域的跨域请求，这里其实最后调整一下，只允许前端的请求会更好
 
-ESP32_HOST = 'ESP32的IP地址' #记得修改为esp32的IP哈~
+ESP32_HOST = '192.168.140.245' #记得修改为esp32的IP哈~
 ESP32_PORT = 12345  # 记得修改为ESP32监听的端口
 
 @app.route('/api/upload', methods=['POST'])
 def upload_file():
-    data = request.get_json()
-    file_path = data['filePath']
-    
-    if not os.path.exists(file_path):
-        return jsonify({'message': 'File does not exist.'}), 404
+    if 'file' not in request.files:
+        return jsonify({'message': 'No file part in multipart form data.'}), 400
 
-    try:
-        with open(file_path, 'r') as file:
-            file_content = file.read()
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'message': 'No file selected for uploading.'}), 400
+
+    if file:
+        # 读取文件的内容
+        file_content = file.read()
+        # 读取完关闭
+        file.close()
+        print(file_content)
+        filename = file.filename
+        print(filename)
+        # 如果没有创建文件
+        if not os.path.exists('./uploads'):
+            os.makedirs('./uploads')
+        # 打开文件并指定模式为wb
+        with open(os.path.join(app.config['upimgs'],'uploads/'+filename), 'wb') as f:
+            # 写入文件内容
+            f.write(file_content)
+        file_path = os.path.join('uploads/',filename)
+        try:
+            print("开始发送文件")
+            # 这里file_path去除前面的uploads/
+            file_path=file_path.replace("uploads/","")
             send_to_esp32(file_content, file_path)
-        return jsonify({'message': 'File is being transmitted to ESP32.'})
-    except Exception as e:
-        return jsonify({'message': f'An error occurred: {str(e)}'}), 500
+            return jsonify({'message': 'File transmitted successfully.'}), 201
+        except Exception as e:
+            return jsonify({'message': f'An error occurred: {str(e)}'}), 500
 
 def send_to_esp32(file_content, file_path):
     try:
+        print("正在发送文件")
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((ESP32_HOST, ESP32_PORT))
             # 发送文件名和内容
