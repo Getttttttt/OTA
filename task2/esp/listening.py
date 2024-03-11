@@ -15,5 +15,6 @@ while True:
     file_name = file_path.split('/')[-1]  # 获取文件名
     with open(file_name, 'w') as file:
         file.write(file_content)
-    print(f'File {file_name} has been written.')
+        print(f'File {file_name} has been written.')
+        break
     conn.close()
