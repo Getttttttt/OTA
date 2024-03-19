@@ -7,7 +7,7 @@ app = Flask(__name__)
 app.config['upimgs'] = './'
 CORS(app)  # 允许所有域的跨域请求，这里其实最后调整一下，只允许前端的请求会更好
 
-ESP32_HOST = '192.168.140.245' #记得修改为esp32的IP哈~
+ESP32_HOST = '192.168.208.245' #记得修改为esp32的IP哈~
 ESP32_PORT = 12345  # 记得修改为ESP32监听的端口
 
 @app.route('/api/upload', methods=['POST'])
@@ -24,7 +24,7 @@ def upload_file():
         file_content = file.read()
         # 读取完关闭
         file.close()
-        print(file_content)
+        # print(file_content)
         filename = file.filename
         print(filename)
         # 如果没有创建文件
@@ -35,6 +35,9 @@ def upload_file():
             # 写入文件内容
             f.write(file_content)
         file_path = os.path.join('uploads/',filename)
+        with open(file_path, 'r', encoding='utf-8') as f:
+            file_content = f.read()
+        #print('此时的文件内容'+file_content)
         try:
             print("开始发送文件")
             # 这里file_path去除前面的uploads/
